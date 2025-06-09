@@ -46,17 +46,40 @@ export default function MasterAgent() {
     setInput('')
     setIsLoading(true)
 
-    // Simulate AI response for now
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `I received your message: "${userMessage.content}". This is a placeholder response. Soon we'll connect this to real AI!`,
-        role: 'assistant',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, aiMessage])
-      setIsLoading(false)
-    }, 1000)
+   // Send to n8n webhook
+try {
+  const response = await fetch('https://n8n.srv858266.hstgr.cloud/webhook-test/51fb74b5-6e67-46ff-883b-217fdb8287f8', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: userMessage.content,
+      systemPrompt: systemPrompt,
+      timestamp: new Date( ).toISOString()
+    })
+  })
+  
+  const data = await response.text()
+  
+  const aiMessage: Message = {
+    id: (Date.now() + 1).toString(),
+    content: data,
+    role: 'assistant',
+    timestamp: new Date()
+  }
+  setMessages(prev => [...prev, aiMessage])
+} catch (error) {
+  const errorMessage: Message = {
+    id: (Date.now() + 1).toString(),
+    content: 'Sorry, there was an error connecting to the AI.',
+    role: 'assistant',
+    timestamp: new Date()
+  }
+  setMessages(prev => [...prev, errorMessage])
+}
+setIsLoading(false)
+
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
